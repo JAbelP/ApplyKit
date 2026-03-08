@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ApplyKit</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <!-- ── Main View ─────────────────────────────────────────── -->
+  <div id="view-main">
+    <header class="header">
+      <span class="header-title">ApplyKit</span>
+    </header>
+
+    <div class="card">
+      <label class="field-label" for="profile-select">Active Profile</label>
+      <select id="profile-select" class="select">
+        <option value="">— No profiles yet —</option>
+      </select>
+
+      <button id="btn-fill" class="btn btn-primary" disabled>Fill Page</button>
+
+      <div class="btn-row">
+        <button id="btn-new"    class="btn btn-secondary">New Profile</button>
+        <button id="btn-edit"   class="btn btn-secondary" disabled>Edit</button>
+        <button id="btn-delete" class="btn btn-danger"    disabled>Delete</button>
+      </div>
+
+      <div id="status-msg" class="status-msg hidden"></div>
+    </div>
+  </div>
+
+  <!-- ── Profile Form View ─────────────────────────────────── -->
+  <div id="view-form" class="hidden">
+    <header class="header">
+      <span id="form-title" class="header-title">New Profile</span>
+    </header>
+
+    <div class="card form-card">
+      <form id="profile-form" novalidate>
+
+        <!-- Profile Name -->
+        <div class="form-section-label">Profile Name</div>
+        <div class="field-group">
+          <label class="field-label" for="f-name">Profile Name *</label>
+          <input id="f-name" class="input" type="text" placeholder="e.g. Computer Science" required />
+        </div>
+
+        <!-- Personal Info -->
+        <div class="form-section-label">Personal Info</div>
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label" for="f-first-name">First Name</label>
+            <input id="f-first-name" class="input" type="text" placeholder="Jane" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="f-last-name">Last Name</label>
+            <input id="f-last-name" class="input" type="text" placeholder="Doe" />
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="f-email">Email</label>
+          <input id="f-email" class="input" type="email" placeholder="jane@example.com" />
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="f-phone">Phone</label>
+          <input id="f-phone" class="input" type="tel" placeholder="555-867-5309" />
+        </div>
+
+        <!-- Address -->
+        <div class="form-section-label">Address</div>
+        <div class="field-group">
+          <label class="field-label" for="f-address">Street Address</label>
+          <input id="f-address" class="input" type="text" placeholder="123 Main St" />
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label" for="f-city">City</label>
+            <input id="f-city" class="input" type="text" placeholder="Springfield" />
+          </div>
+          <div class="field-group field-group--sm">
+            <label class="field-label" for="f-state">State</label>
+            <input id="f-state" class="input" type="text" placeholder="IL" maxlength="2" />
+          </div>
+          <div class="field-group field-group--sm">
+            <label class="field-label" for="f-zip">Zip</label>
+            <input id="f-zip" class="input" type="text" placeholder="62701" maxlength="10" />
+          </div>
+        </div>
+
+        <!-- Online Presence -->
+        <div class="form-section-label">Online Presence</div>
+        <div class="field-group">
+          <label class="field-label" for="f-linkedin">LinkedIn URL</label>
+          <input id="f-linkedin" class="input" type="url" placeholder="https://linkedin.com/in/janedoe" />
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="f-website">Portfolio / Website URL</label>
+          <input id="f-website" class="input" type="url" placeholder="https://janedoe.dev" />
+        </div>
+
+        <!-- Work Experience (dynamic) -->
+        <div class="section-header">
+          <span class="form-section-label" style="border-top:none;padding-top:0;margin-top:0;">Work Experience</span>
+          <button type="button" class="btn-add-entry" id="btn-add-exp" title="Add experience">+</button>
+        </div>
+        <div id="exp-list" class="entry-list"></div>
+
+        <!-- Summary -->
+        <div class="form-section-label">Summary / Objective</div>
+        <div class="field-group">
+          <textarea id="f-summary" class="input textarea" placeholder="Brief professional summary..."></textarea>
+        </div>
+
+        <!-- Education (dynamic) -->
+        <div class="section-header">
+          <span class="form-section-label" style="border-top:none;padding-top:0;margin-top:0;">Education</span>
+          <button type="button" class="btn-add-entry" id="btn-add-edu" title="Add education">+</button>
+        </div>
+        <div id="edu-list" class="entry-list"></div>
+
+        <!-- Skills & Preferences -->
+        <div class="form-section-label">Skills &amp; Preferences</div>
+        <div class="field-group">
+          <label class="field-label" for="f-skills">Skills <span class="hint">(comma-separated)</span></label>
+          <input id="f-skills" class="input" type="text" placeholder="JavaScript, Python, SQL" />
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="f-salary">Desired Salary <span class="hint">(optional)</span></label>
+          <input id="f-salary" class="input" type="text" placeholder="75000" />
+        </div>
+
+        <!-- Work Authorization (boolean toggle) -->
+        <div class="form-section-label">Work Authorization</div>
+        <label class="toggle-row" for="f-work-auth">
+          <span class="toggle-label">Authorized to work in the US</span>
+          <span class="toggle-wrap">
+            <input id="f-work-auth" type="checkbox" class="toggle-input" />
+            <span class="toggle-track">
+              <span class="toggle-thumb"></span>
+            </span>
+          </span>
+        </label>
+
+        <!-- Resume -->
+        <div class="form-section-label">Resume</div>
+        <div class="resume-area" id="resume-area">
+          <div id="resume-current" class="resume-current hidden">
+            <span id="resume-name" class="resume-filename"></span>
+            <button type="button" id="btn-resume-clear" class="btn-icon-danger" title="Remove resume">&#x2715;</button>
+          </div>
+          <label class="resume-drop-label" id="resume-drop-label" for="f-resume">
+            <span class="resume-drop-icon">&#128196;</span>
+            <span class="resume-drop-text">Click to attach resume <span class="hint">(PDF or DOCX)</span></span>
+            <input id="f-resume" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="resume-file-input" />
+          </label>
+        </div>
+
+        <div id="form-error" class="form-error hidden"></div>
+
+        <div class="btn-row btn-row--form">
+          <button type="submit" class="btn btn-primary">Save Profile</button>
+          <button type="button" id="btn-cancel" class="btn btn-secondary">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
