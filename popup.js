@@ -47,12 +47,19 @@ const btnResumeClear = document.getElementById('btn-resume-clear');
 const resumeDropLabel = document.getElementById('resume-drop-label');
 const resumeFileInput = document.getElementById('f-resume');
 
+const coverCurrent   = document.getElementById('cover-current');
+const coverNameEl    = document.getElementById('cover-name');
+const btnCoverClear  = document.getElementById('btn-cover-clear');
+const coverDropLabel = document.getElementById('cover-drop-label');
+const coverFileInput = document.getElementById('f-cover');
+
 // ── State ─────────────────────────────────────────────────────
 let profiles    = {};
 let editingName = null;
-// Temporary resume state while the form is open
+// Temporary resume/cover state while the form is open
 // { name: string, dataUrl: string } | null
 let pendingResume = null;
+let pendingCover  = null;
 
 // ── Storage helpers ───────────────────────────────────────────
 function loadProfiles() {
@@ -271,6 +278,36 @@ btnResumeClear.addEventListener('click', () => {
   updateResumeUI();
 });
 
+// ── Cover letter helpers ──────────────────────────────────────
+function updateCoverUI() {
+  if (pendingCover) {
+    coverNameEl.textContent = pendingCover.name;
+    coverCurrent.classList.remove('hidden');
+    coverDropLabel.classList.add('hidden');
+  } else {
+    coverCurrent.classList.add('hidden');
+    coverDropLabel.classList.remove('hidden');
+  }
+}
+
+coverFileInput.addEventListener('change', () => {
+  const file = coverFileInput.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    pendingCover = { name: file.name, dataUrl: e.target.result };
+    updateCoverUI();
+  };
+  reader.readAsDataURL(file);
+  coverFileInput.value = '';
+});
+
+btnCoverClear.addEventListener('click', () => {
+  pendingCover = null;
+  updateCoverUI();
+});
+
 // ── Form <-> Profile conversion ───────────────────────────────
 function formToProfile() {
   return {
@@ -291,6 +328,7 @@ function formToProfile() {
     experience:  readExpEntries(),           // array
     education:   readEduEntries(),           // array
     resume:      pendingResume,              // { name, dataUrl } | null
+    cover:       pendingCover,               // { name, dataUrl } | null
   };
 }
 
@@ -318,9 +356,11 @@ function profileToForm(name, p) {
   eduList.innerHTML = '';
   (p.education || []).forEach(e => addEduEntry(e));
 
-  // Resume
+  // Resume & cover letter
   pendingResume = p.resume || null;
   updateResumeUI();
+  pendingCover = p.cover || null;
+  updateCoverUI();
 }
 
 function clearForm() {
@@ -329,6 +369,8 @@ function clearForm() {
   eduList.innerHTML = '';
   pendingResume = null;
   updateResumeUI();
+  pendingCover = null;
+  updateCoverUI();
   hideFormError();
 }
 
@@ -426,6 +468,15 @@ btnFill.addEventListener('click', async () => {
         target: { tabId: tab.id },
         func: attachResumeToPage,
         args: [profile.resume],
+      });
+    }
+
+    // If there's a cover letter, attach it to the best matching file input
+    if (profile.cover) {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: attachCoverToPage,
+        args: [profile.cover],
       });
     }
 
@@ -763,6 +814,73 @@ function attachResumeToPage(resumeObj) {
   // Highlight it
   const origOutline = best.style.outline;
   best.style.outline = '2px solid #f59e0b';
+  setTimeout(() => { best.style.outline = origOutline; }, 1800);
+}
+
+// ── Injected cover-letter-attach function ────────────────────
+function attachCoverToPage(coverObj) {
+  if (!coverObj || !coverObj.dataUrl) return;
+
+  const fileInputs = Array.from(document.querySelectorAll('input[type="file"]'));
+  if (fileInputs.length === 0) return;
+
+  const coverKeywords  = ['cover','coverletter','coverletterfile'];
+  const resumeKeywords = ['resume','cv','curriculum','vitae'];
+  function normalize(s) { return (s || '').toLowerCase().replace(/[\s_\-\.]/g, ''); }
+
+  function scoreFileInput(el) {
+    const hints = [el.name, el.id, el.getAttribute('aria-label'), el.getAttribute('placeholder')];
+    let node = el.parentElement;
+    for (let i = 0; i < 4 && node; i++) {
+      if (el.id) {
+        const lbl = document.querySelector(`label[for="${CSS.escape(el.id)}"]`);
+        if (lbl) hints.push(lbl.textContent);
+      }
+      const lbl = node.querySelector('label, h1, h2, h3, h4, p, span');
+      if (lbl) hints.push(lbl.textContent);
+      node = node.parentElement;
+    }
+    const norm = hints.map(normalize).filter(Boolean);
+    let score = 0;
+    for (const h of norm) {
+      // Penalise resume inputs
+      for (const kw of resumeKeywords) {
+        if (h === kw || h.includes(kw)) { score -= 20; break; }
+      }
+      for (const kw of coverKeywords) {
+        if (h === kw)          { score = Math.max(score, 10); break; }
+        if (h.includes(kw))    { score = Math.max(score, 5); }
+      }
+    }
+    return score;
+  }
+
+  let best = null, bestScore = -Infinity;
+  for (const el of fileInputs) {
+    const s = scoreFileInput(el);
+    if (s > bestScore) { bestScore = s; best = el; }
+  }
+
+  // Only attach if we found a positively-scored match — don't guess
+  if (!best || bestScore < 0) return;
+
+  const [header, b64] = coverObj.dataUrl.split(',');
+  const mimeMatch = header.match(/:(.*?);/);
+  const mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  const blob = new Blob([bytes], { type: mime });
+  const file = new File([blob], coverObj.name, { type: mime });
+
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  best.files = dt.files;
+  best.dispatchEvent(new Event('change', { bubbles: true }));
+  best.dispatchEvent(new Event('input',  { bubbles: true }));
+
+  const origOutline = best.style.outline;
+  best.style.outline = '2px solid #a78bfa';
   setTimeout(() => { best.style.outline = origOutline; }, 1800);
 }
 

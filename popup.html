@@ -157,6 +157,20 @@
           </label>
         </div>
 
+        <!-- Cover Letter -->
+        <div class="form-section-label">Cover Letter <span class="hint">(optional)</span></div>
+        <div class="resume-area" id="cover-area">
+          <div id="cover-current" class="resume-current hidden">
+            <span id="cover-name" class="resume-filename"></span>
+            <button type="button" id="btn-cover-clear" class="btn-icon-danger" title="Remove cover letter">&#x2715;</button>
+          </div>
+          <label class="resume-drop-label" id="cover-drop-label" for="f-cover">
+            <span class="resume-drop-icon">&#128196;</span>
+            <span class="resume-drop-text">Click to attach cover letter <span class="hint">(PDF or DOCX)</span></span>
+            <input id="f-cover" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="resume-file-input" />
+          </label>
+        </div>
+
         <div id="form-error" class="form-error hidden"></div>
 
         <div class="btn-row btn-row--form">
