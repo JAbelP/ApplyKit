@@ -701,19 +701,30 @@ function attachResumeToPage(resumeObj) {
   if (fileInputs.length === 0) return;
 
   // Score file inputs by their attributes for resume relevance
-  const resumeKeywords = ['resume','cv','curriculum','upload','attachment','document','file'];
+  const resumeKeywords  = ['resume','cv','curriculum','vitae'];
+  const coverKeywords   = ['cover','coverletter','coverletterfile'];
   function normalize(s) { return (s || '').toLowerCase().replace(/[\s_\-\.]/g, ''); }
 
   function scoreFileInput(el) {
     const hints = [el.name, el.id, el.getAttribute('aria-label'), el.getAttribute('placeholder')];
-    const parent = el.parentElement;
-    if (parent) {
-      const lbl = parent.querySelector('label') || (el.id && document.querySelector(`label[for="${CSS.escape(el.id)}"]`));
+    // Walk up 4 ancestor levels to capture surrounding label / heading text
+    let node = el.parentElement;
+    for (let i = 0; i < 4 && node; i++) {
+      if (el.id) {
+        const lbl = document.querySelector(`label[for="${CSS.escape(el.id)}"]`);
+        if (lbl) hints.push(lbl.textContent);
+      }
+      const lbl = node.querySelector('label, h1, h2, h3, h4, p, span');
       if (lbl) hints.push(lbl.textContent);
+      node = node.parentElement;
     }
     const norm = hints.map(normalize).filter(Boolean);
     let score = 0;
     for (const h of norm) {
+      // Penalise cover letter inputs heavily
+      for (const kw of coverKeywords) {
+        if (h === kw || h.includes(kw)) { score -= 20; break; }
+      }
       for (const kw of resumeKeywords) {
         if (h === kw)          { score = Math.max(score, 10); break; }
         if (h.includes(kw))    { score = Math.max(score, 5); }
