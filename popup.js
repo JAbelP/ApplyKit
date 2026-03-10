@@ -17,8 +17,9 @@ const formError     = document.getElementById('form-error');
 // Static field refs
 const F = {
   name:      document.getElementById('f-name'),
-  firstName: document.getElementById('f-first-name'),
-  lastName:  document.getElementById('f-last-name'),
+  firstName:  document.getElementById('f-first-name'),
+  middleName: document.getElementById('f-middle-name'),
+  lastName:   document.getElementById('f-last-name'),
   email:     document.getElementById('f-email'),
   phone:     document.getElementById('f-phone'),
   address:   document.getElementById('f-address'),
@@ -312,6 +313,7 @@ btnCoverClear.addEventListener('click', () => {
 function formToProfile() {
   return {
     firstName:   F.firstName.value.trim(),
+    middleName:  F.middleName.value.trim(),
     lastName:    F.lastName.value.trim(),
     email:       F.email.value.trim(),
     phone:       F.phone.value.trim(),
@@ -334,8 +336,9 @@ function formToProfile() {
 
 function profileToForm(name, p) {
   F.name.value      = name || '';
-  F.firstName.value = p.firstName || '';
-  F.lastName.value  = p.lastName  || '';
+  F.firstName.value  = p.firstName  || '';
+  F.middleName.value = p.middleName || '';
+  F.lastName.value   = p.lastName   || '';
   F.email.value     = p.email     || '';
   F.phone.value     = p.phone     || '';
   F.address.value   = p.address   || '';
@@ -499,6 +502,10 @@ function fillPageWithProfile(profile) {
       'first_name','firstname','fname','first-name','first name',
       'applicant_first_name','applicantfirstname','given_name','givenname',
       'given-name','forename','candidate_first','legal_first'
+    ],
+    middleName: [
+      'middle_name','middlename','mname','middle-name','middle name',
+      'middle_initial','middleinitial','middle','second_name'
     ],
     lastName: [
       'last_name','lastname','lname','last-name','last name','surname',
