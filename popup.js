@@ -31,7 +31,8 @@ const F = {
   summary:   document.getElementById('f-summary'),
   skills:    document.getElementById('f-skills'),
   salary:    document.getElementById('f-salary'),
-  workAuth:  document.getElementById('f-work-auth'),   // checkbox
+  workAuth:        document.getElementById('f-work-auth'),        // checkbox
+  visaSponsorship: document.getElementById('f-visa-sponsorship'), // checkbox
 };
 
 // Dynamic list containers
@@ -326,7 +327,8 @@ function formToProfile() {
     summary:     F.summary.value.trim(),
     skills:      F.skills.value.trim(),
     salary:      F.salary.value.trim(),
-    workAuth:    F.workAuth.checked,        // boolean
+    workAuth:        F.workAuth.checked,        // boolean
+    visaSponsorship: F.visaSponsorship.checked, // boolean
     experience:  readExpEntries(),           // array
     education:   readEduEntries(),           // array
     resume:      pendingResume,              // { name, dataUrl } | null
@@ -350,7 +352,8 @@ function profileToForm(name, p) {
   F.summary.value   = p.summary   || '';
   F.skills.value    = p.skills    || '';
   F.salary.value    = p.salary    || '';
-  F.workAuth.checked = !!p.workAuth;
+  F.workAuth.checked        = !!p.workAuth;
+  F.visaSponsorship.checked = !!p.visaSponsorship;
 
   // Dynamic lists
   expList.innerHTML = '';
@@ -584,6 +587,12 @@ function fillPageWithProfile(profile) {
       'employment_authorization','eligibility','work_eligibility',
       'legally_authorized','right_to_work','citizenship','citizenship_status'
     ],
+    visaSponsorship: [
+      'visa_sponsorship','visasponsorship','sponsorship','require_sponsorship',
+      'requiresponsorship','needs_sponsorship','needssponsorship',
+      'sponsorship_required','will_require_sponsorship','future_sponsorship',
+      'employment_visa_sponsorship','immigration_sponsorship'
+    ],
   };
 
   // Flatten experience[0] and education[0] into top-level scalar values
@@ -601,8 +610,9 @@ function fillPageWithProfile(profile) {
     flat.school   = flat.school   || edu0.school;
     flat.gradYear = flat.gradYear || edu0.gradYear;
   }
-  // workAuth: convert boolean to a readable string for text inputs
-  flat.workAuth = profile.workAuth ? 'Yes' : 'No';
+  // workAuth / visaSponsorship: convert booleans to readable strings for text inputs
+  flat.workAuth        = profile.workAuth        ? 'Yes' : 'No';
+  flat.visaSponsorship = profile.visaSponsorship ? 'Yes' : 'No';
 
   function normalize(str) {
     return (str || '').toLowerCase().replace(/[\s_\-\.]/g, '');
@@ -657,13 +667,15 @@ function fillPageWithProfile(profile) {
   const assignments  = new Map();
 
   for (const el of inputs) {
-    // Handle checkboxes/radios for workAuth separately
+    // Handle checkboxes/radios for workAuth and visaSponsorship separately
     if (el.type === 'checkbox' || el.type === 'radio') {
       const hints = getFieldHints(el);
       const authAliases = ALIASES.workAuth.map(normalize);
-      const isAuthField = hints.some(h => authAliases.some(a => h === a || h.includes(a) || a.includes(h)));
-      if (isAuthField) {
+      const sponsorAliases = ALIASES.visaSponsorship.map(normalize);
+      if (hints.some(h => authAliases.some(a => h === a || h.includes(a) || a.includes(h)))) {
         assignments.set(el, { key: 'workAuth', score: 10 });
+      } else if (hints.some(h => sponsorAliases.some(a => h === a || h.includes(a) || a.includes(h)))) {
+        assignments.set(el, { key: 'visaSponsorship', score: 10 });
       }
       continue;
     }
@@ -681,9 +693,11 @@ function fillPageWithProfile(profile) {
   for (const [el, { key }] of assignments) {
     const raw = flat[key];
 
-    // Checkbox / radio for work authorization
+    // Checkbox / radio for boolean fields
     if (el.type === 'checkbox' || el.type === 'radio') {
-      const shouldBeChecked = profile.workAuth === true;
+      const shouldBeChecked = key === 'visaSponsorship'
+        ? profile.visaSponsorship === true
+        : profile.workAuth === true;
       if (el.checked !== shouldBeChecked) {
         el.checked = shouldBeChecked;
         el.dispatchEvent(new Event('change', { bubbles: true }));
